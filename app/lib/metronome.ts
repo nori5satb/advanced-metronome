@@ -64,11 +64,23 @@ export class MetronomeEngine {
 
   private async initializeAudioContext(): Promise<void> {
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // 低遅延設定でAudioContextを初期化
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
+        latencyHint: 'interactive',
+        sampleRate: 44100, // 標準サンプルレート
+      });
       
       // Resume audio context if suspended (required for mobile browsers)
       if (this.audioContext.state === 'suspended') {
         await this.audioContext.resume();
+      }
+      
+      // 遅延測定とログ
+      if (this.audioContext.baseLatency !== undefined) {
+        console.log(`Audio Context Base Latency: ${(this.audioContext.baseLatency * 1000).toFixed(2)}ms`);
+      }
+      if (this.audioContext.outputLatency !== undefined) {
+        console.log(`Audio Context Output Latency: ${(this.audioContext.outputLatency * 1000).toFixed(2)}ms`);
       }
       
       this.isInitialized = true;
@@ -93,18 +105,25 @@ export class MetronomeEngine {
     }
     
     oscillator.frequency.setValueAtTime(frequency, when);
+    oscillator.type = 'square'; // より軽量な波形
 
-    // Sharp click envelope
+    // 最適化されたエンベロープ（より短い音で遅延を削減）
     const volume = isCountIn ? this.settings.countInVolume : this.settings.volume;
     gainNode.gain.setValueAtTime(0, when);
     gainNode.gain.linearRampToValueAtTime(volume, when + 0.001);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, when + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, when + 0.05); // 50msに短縮
 
     oscillator.connect(gainNode);
     gainNode.connect(this.audioContext.destination);
 
     oscillator.start(when);
-    oscillator.stop(when + 0.1);
+    oscillator.stop(when + 0.05);
+
+    // メモリリークを防ぐためのクリーンアップ
+    oscillator.onended = () => {
+      oscillator.disconnect();
+      gainNode.disconnect();
+    };
   }
 
   private scheduleBeats(): void {

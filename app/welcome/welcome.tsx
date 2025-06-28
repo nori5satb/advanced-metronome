@@ -1,4 +1,8 @@
 import { Form, useNavigation, Link } from "react-router";
+import { useState } from "react";
+import { useAuth } from "../components/auth/AuthContext";
+import AuthModal from "../components/auth/AuthModal";
+import UserProfile from "../components/auth/UserProfile";
 
 import logoDark from "./logo-dark.svg";
 import logoLight from "./logo-light.svg";
@@ -16,24 +20,52 @@ export function Welcome({
   message: string;
 }) {
   const navigation = useNavigation();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   return (
-    <main className="flex items-center justify-center pt-16 pb-4">
-      <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
-        <header className="flex flex-col items-center gap-9">
-          <div className="w-[500px] max-w-[100vw] p-4">
-            <img
-              src={logoLight}
-              alt="React Router"
-              className="block w-full dark:hidden"
-            />
-            <img
-              src={logoDark}
-              alt="React Router"
-              className="hidden w-full dark:block"
-            />
+    <>
+      <main className="flex items-center justify-center pt-16 pb-4">
+        <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
+          <header className="flex flex-col items-center gap-9">
+            <div className="w-[500px] max-w-[100vw] p-4">
+              <img
+                src={logoLight}
+                alt="React Router"
+                className="block w-full dark:hidden"
+              />
+              <img
+                src={logoDark}
+                alt="React Router"
+                className="hidden w-full dark:block"
+              />
+            </div>
+          </header>
+          
+          {/* 認証状態表示 */}
+          <div className="flex items-center gap-4">
+            {isLoading ? (
+              <div className="text-gray-500">読み込み中...</div>
+            ) : isAuthenticated && user ? (
+              <div className="flex items-center gap-3">
+                <span className="text-gray-700">こんにちは、{user.name}さん</span>
+                <button
+                  onClick={() => setShowProfile(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  プロフィール
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+              >
+                ログイン / サインアップ
+              </button>
+            )}
           </div>
-        </header>
         <div className="max-w-[300px] w-full space-y-6 px-4">
           <nav className="rounded-3xl border border-gray-200 p-6 dark:border-gray-700 space-y-4">
             <p className="leading-6 text-gray-700 dark:text-gray-200 text-center">
@@ -120,6 +152,20 @@ export function Welcome({
         </div>
       </div>
     </main>
+
+    {/* 認証モーダル */}
+    <AuthModal
+      isOpen={showAuthModal}
+      onClose={() => setShowAuthModal(false)}
+    />
+
+    {/* プロフィールモーダル */}
+    {showProfile && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <UserProfile onClose={() => setShowProfile(false)} />
+      </div>
+    )}
+  </>
   );
 }
 
