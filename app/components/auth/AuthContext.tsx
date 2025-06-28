@@ -38,7 +38,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { authenticated: boolean; user?: User };
         if (data.authenticated && data.user) {
           setUser(data.user);
           setIsAuthenticated(true);
@@ -75,10 +75,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         credentials: 'include'
       });
 
-      const data = await response.json();
+      const data = await response.json() as { success: boolean; user?: User; error?: string };
 
       if (response.ok && data.success) {
-        setUser(data.user);
+        setUser(data.user!);
         setIsAuthenticated(true);
         return { success: true };
       } else {
@@ -103,10 +103,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         credentials: 'include'
       });
 
-      const data = await response.json();
+      const data = await response.json() as { success: boolean; user?: User; error?: string };
 
       if (response.ok && data.success) {
-        setUser(data.user);
+        setUser(data.user!);
         setIsAuthenticated(true);
         return { success: true };
       } else {
