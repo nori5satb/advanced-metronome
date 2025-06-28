@@ -87,13 +87,13 @@ export class PracticeSessionRepository {
   }
 
   async getRecentHistory(songId?: string, limit: number = 10): Promise<PracticeHistoryRecord[]> {
-    let query = this.db.select().from(practiceHistory);
-    
     if (songId) {
-      query = query.where(eq(practiceHistory.songId, songId));
+      return this.db.select().from(practiceHistory)
+        .where(eq(practiceHistory.songId, songId))
+        .limit(limit);
     }
     
-    return query.limit(limit);
+    return this.db.select().from(practiceHistory).limit(limit);
   }
 
   parseSessionSections(session: PracticeSession): string[] {
