@@ -159,3 +159,69 @@ export const syncConflicts = sqliteTable("syncConflicts", {
   createdAt: integer().notNull(),
   resolvedAt: integer(),
 });
+
+export const sheetMusic = sqliteTable("sheetMusic", {
+  id: text().primaryKey(),
+  songId: text().references(() => songs.id, { onDelete: "cascade" }),
+  userId: text().references(() => users.id, { onDelete: "cascade" }),
+  fileName: text().notNull(),
+  filePath: text().notNull(),
+  fileSize: integer().notNull(),
+  mimeType: text().notNull(),
+  isProcessed: integer().notNull().default(0), // boolean as integer
+  uploadedAt: integer().notNull(),
+  processedAt: integer(),
+  createdAt: integer().notNull(),
+  updatedAt: integer().notNull(),
+});
+
+export const sheetMusicAnalysis = sqliteTable("sheetMusicAnalysis", {
+  id: text().primaryKey(),
+  sheetMusicId: text().notNull().references(() => sheetMusic.id, { onDelete: "cascade" }),
+  analysisVersion: text().notNull().default("1.0"),
+  detectedTempo: integer(),
+  tempoConfidence: real(), // 0-1
+  detectedTimeSignature: text(),
+  timeSignatureConfidence: real(), // 0-1
+  detectedKey: text(),
+  keyConfidence: real(), // 0-1
+  totalMeasures: integer(),
+  totalPages: integer(),
+  rawOcrData: text(), // JSON
+  analysisMetadata: text(), // JSON
+  processingTimeMs: integer(),
+  errorMessages: text(), // JSON array
+  confidenceScore: real(), // overall confidence 0-1
+  createdAt: integer().notNull(),
+  updatedAt: integer().notNull(),
+});
+
+export const sheetMusicSections = sqliteTable("sheetMusicSections", {
+  id: text().primaryKey(),
+  analysisId: text().notNull().references(() => sheetMusicAnalysis.id, { onDelete: "cascade" }),
+  sectionType: text().notNull(), // "verse", "chorus", "bridge", "intro", "outro", "instrumental"
+  startMeasure: integer().notNull(),
+  endMeasure: integer().notNull(),
+  startPage: integer(),
+  endPage: integer(),
+  coordinateData: text(), // JSON with bounding boxes
+  tempo: integer(),
+  timeSignature: text(),
+  confidence: real(), // 0-1
+  notes: text(),
+  createdAt: integer().notNull(),
+});
+
+export const sheetMusicElements = sqliteTable("sheetMusicElements", {
+  id: text().primaryKey(),
+  analysisId: text().notNull().references(() => sheetMusicAnalysis.id, { onDelete: "cascade" }),
+  elementType: text().notNull(), // "tempo_marking", "time_signature", "key_signature", "measure_line", "note", "rest"
+  page: integer().notNull(),
+  boundingBox: text().notNull(), // JSON: {x, y, width, height}
+  value: text(), // recognized value (e.g., "120", "4/4", "C major")
+  confidence: real().notNull(), // 0-1
+  rawData: text(), // JSON with additional metadata
+  measure: integer(),
+  staff: integer(),
+  createdAt: integer().notNull(),
+});
