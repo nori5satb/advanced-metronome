@@ -2,7 +2,7 @@
 
 # 🚀 Agent間メッセージ送信スクリプト
 
-# tmuxのbase-indexとpane-base-indexを動的に取得
+# tmuxのbase-indexとpane-base-indexを動的に取得する
 get_tmux_indices() {
     local session="$1"
     local window_index=$(tmux show-options -t "$session" -g base-index 2>/dev/null | awk '{print $2}')
