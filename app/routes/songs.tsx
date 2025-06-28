@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, type ActionFunctionArgs } from 'react-router';
+import { type LoaderFunctionArgs, type ActionFunctionArgs, redirect } from 'react-router';
 import { SongRepository } from '../lib/songs';
 import { createDB } from '../lib/db';
 import SongManagementPage from '../components/song/SongManagementPage';
@@ -86,8 +86,6 @@ export default function SongsPage({ loaderData, actionData }: SongsPageProps) {
     if (!result.success) {
       throw new Error(result.error || 'テンポ更新に失敗しました');
     }
-
-    return result;
   };
 
   return (
