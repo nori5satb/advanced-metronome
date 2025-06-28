@@ -79,9 +79,9 @@ export function convertScoreToSongData(
           section.tempo = Math.max(30, Math.min(300, section.tempo));
         }
 
-        if (section.measures < 1 || section.measures > 999) {
+        if ((section.measures || 0) < 1 || (section.measures || 0) > 999) {
           warnings.push(`セクション "${section.name}" の小節数が有効範囲外です`);
-          section.measures = Math.max(1, Math.min(999, section.measures));
+          section.measures = Math.max(1, Math.min(999, section.measures || 1));
         }
 
         if (!['2/4', '3/4', '4/4', '5/4', '6/4', '7/4', '6/8', '7/8', '9/8', '12/8'].includes(section.timeSignature)) {
