@@ -1,6 +1,7 @@
 import { MetronomeProvider } from '../../lib/metronome-context';
 import MetronomeDisplay from './MetronomeDisplay';
 import MetronomeControls from './MetronomeControls';
+import PracticeSessionControls from './PracticeSessionControls';
 
 export default function MetronomePage() {
   return (
@@ -18,7 +19,7 @@ export default function MetronomePage() {
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
             {/* Display Panel */}
             <div className="order-2 xl:order-1">
               <MetronomeDisplay className="h-full" />
@@ -27,6 +28,11 @@ export default function MetronomePage() {
             {/* Controls Panel */}
             <div className="order-1 xl:order-2">
               <MetronomeControls className="h-full" />
+            </div>
+
+            {/* Practice Session Panel */}
+            <div className="order-3 xl:order-3">
+              <PracticeSessionControls className="h-full" />
             </div>
           </div>
 
@@ -42,13 +48,16 @@ export default function MetronomePage() {
               <li>• Click the play button to start the metronome</li>
               <li>• Watch the beat indicators for visual timing</li>
               <li>• The first beat of each measure is highlighted in red (downbeat)</li>
+              <li>• Use loop function to repeat specific measure ranges</li>
+              <li>• Set target loops for focused practice sessions</li>
+              <li>• Jump to specific measures for quick navigation</li>
             </ul>
           </div>
 
           {/* Technical Info */}
           <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-500">
             <p>
-              Web Audio API • Low Latency Timing • Mobile Optimized
+              Web Audio API • Low Latency Timing • Mobile Optimized • Practice Mode • Loop Function
             </p>
           </div>
         </div>

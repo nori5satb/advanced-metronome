@@ -7,11 +7,19 @@ interface MetronomeContextValue {
   settings: MetronomeSettings;
   currentBeat: BeatInfo | null;
   isPlaying: boolean;
+  isCountingIn: boolean;
   start: () => Promise<void>;
   stop: () => void;
   setBpm: (bpm: number) => void;
   setTimeSignature: (numerator: number, denominator: number) => void;
   setVolume: (volume: number) => void;
+  setCountInEnabled: (enabled: boolean) => void;
+  setCountInBeats: (beats: number) => void;
+  setCountInVolume: (volume: number) => void;
+  setLoopEnabled: (enabled: boolean) => void;
+  setLoopRange: (startMeasure: number, endMeasure: number) => void;
+  setTargetLoops: (loops: number) => void;
+  jumpToMeasure: (measure: number) => void;
   ensureAudioContext: () => Promise<void>;
 }
 
@@ -26,6 +34,7 @@ export function MetronomeProvider({ children }: MetronomeProviderProps) {
   const [settings, setSettings] = useState<MetronomeSettings>(metronome.getSettings());
   const [currentBeat, setCurrentBeat] = useState<BeatInfo | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isCountingIn, setIsCountingIn] = useState(false);
 
   useEffect(() => {
     const handleBeat = (event: MetronomeEvent) => {
@@ -49,16 +58,28 @@ export function MetronomeProvider({ children }: MetronomeProviderProps) {
       }
     };
 
+    const handleCountInStart = () => {
+      setIsCountingIn(true);
+    };
+
+    const handleCountInEnd = () => {
+      setIsCountingIn(false);
+    };
+
     metronome.addEventListener('beat', handleBeat);
     metronome.addEventListener('start', handleStart);
     metronome.addEventListener('stop', handleStop);
     metronome.addEventListener('settingsChange', handleSettingsChange);
+    metronome.addEventListener('countInStart', handleCountInStart);
+    metronome.addEventListener('countInEnd', handleCountInEnd);
 
     return () => {
       metronome.removeEventListener('beat', handleBeat);
       metronome.removeEventListener('start', handleStart);
       metronome.removeEventListener('stop', handleStop);
       metronome.removeEventListener('settingsChange', handleSettingsChange);
+      metronome.removeEventListener('countInStart', handleCountInStart);
+      metronome.removeEventListener('countInEnd', handleCountInEnd);
     };
   }, [metronome]);
 
@@ -91,15 +112,51 @@ export function MetronomeProvider({ children }: MetronomeProviderProps) {
     await metronome.ensureAudioContext();
   }, [metronome]);
 
+  const setCountInEnabled = useCallback((enabled: boolean) => {
+    metronome.setCountInEnabled(enabled);
+  }, [metronome]);
+
+  const setCountInBeats = useCallback((beats: number) => {
+    metronome.setCountInBeats(beats);
+  }, [metronome]);
+
+  const setCountInVolume = useCallback((volume: number) => {
+    metronome.setCountInVolume(volume);
+  }, [metronome]);
+
+  const setLoopEnabled = useCallback((enabled: boolean) => {
+    metronome.setLoopEnabled(enabled);
+  }, [metronome]);
+
+  const setLoopRange = useCallback((startMeasure: number, endMeasure: number) => {
+    metronome.setLoopRange(startMeasure, endMeasure);
+  }, [metronome]);
+
+  const setTargetLoops = useCallback((loops: number) => {
+    metronome.setTargetLoops(loops);
+  }, [metronome]);
+
+  const jumpToMeasure = useCallback((measure: number) => {
+    metronome.jumpToMeasure(measure);
+  }, [metronome]);
+
   const value: MetronomeContextValue = {
     settings,
     currentBeat,
     isPlaying,
+    isCountingIn,
     start,
     stop,
     setBpm,
     setTimeSignature,
     setVolume,
+    setCountInEnabled,
+    setCountInBeats,
+    setCountInVolume,
+    setLoopEnabled,
+    setLoopRange,
+    setTargetLoops,
+    jumpToMeasure,
     ensureAudioContext
   };
 

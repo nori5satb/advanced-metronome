@@ -4,6 +4,14 @@ export interface MetronomeSettings {
   timeSignatureDenominator: number;
   volume: number;
   isPlaying: boolean;
+  countInEnabled: boolean;
+  countInBeats: number;
+  countInVolume: number;
+  loopEnabled: boolean;
+  loopStartMeasure: number;
+  loopEndMeasure: number;
+  currentLoop: number;
+  targetLoops: number;
 }
 
 export interface BeatInfo {
@@ -11,9 +19,10 @@ export interface BeatInfo {
   measure: number;
   isDownbeat: boolean;
   timestamp: number;
+  isCountIn?: boolean;
 }
 
-export type MetronomeEventType = 'beat' | 'start' | 'stop' | 'settingsChange';
+export type MetronomeEventType = 'beat' | 'start' | 'stop' | 'settingsChange' | 'countInStart' | 'countInEnd' | 'loopStart' | 'loopEnd' | 'loopComplete';
 
 export interface MetronomeEvent {
   type: MetronomeEventType;
@@ -28,13 +37,23 @@ export class MetronomeEngine {
   private currentBeat = 0;
   private currentMeasure = 1;
   private timerId: number | null = null;
+  private isCountingIn = false;
+  private countInBeatsRemaining = 0;
   
   private settings: MetronomeSettings = {
     bpm: 120,
     timeSignatureNumerator: 4,
     timeSignatureDenominator: 4,
     volume: 0.7,
-    isPlaying: false
+    isPlaying: false,
+    countInEnabled: true,
+    countInBeats: 4,
+    countInVolume: 0.5,
+    loopEnabled: false,
+    loopStartMeasure: 1,
+    loopEndMeasure: 4,
+    currentLoop: 0,
+    targetLoops: 0
   };
 
   private eventListeners: Map<MetronomeEventType, ((event: MetronomeEvent) => void)[]> = new Map();
@@ -59,21 +78,26 @@ export class MetronomeEngine {
     }
   }
 
-  private createClickSound(isDownbeat: boolean, when: number): void {
+  private createClickSound(isDownbeat: boolean, when: number, isCountIn: boolean = false): void {
     if (!this.audioContext) return;
 
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
 
-    // Different frequencies for downbeat and regular beats
-    oscillator.frequency.setValueAtTime(
-      isDownbeat ? 880 : 440, // A5 for downbeat, A4 for regular beats
-      when
-    );
+    // Different frequencies for downbeat, regular beats, and count-in
+    let frequency: number;
+    if (isCountIn) {
+      frequency = isDownbeat ? 660 : 330; // E5 for count-in downbeat, E4 for regular count-in beats
+    } else {
+      frequency = isDownbeat ? 880 : 440; // A5 for downbeat, A4 for regular beats
+    }
+    
+    oscillator.frequency.setValueAtTime(frequency, when);
 
     // Sharp click envelope
+    const volume = isCountIn ? this.settings.countInVolume : this.settings.volume;
     gainNode.gain.setValueAtTime(0, when);
-    gainNode.gain.linearRampToValueAtTime(this.settings.volume, when + 0.001);
+    gainNode.gain.linearRampToValueAtTime(volume, when + 0.001);
     gainNode.gain.exponentialRampToValueAtTime(0.001, when + 0.1);
 
     oscillator.connect(gainNode);
@@ -92,16 +116,42 @@ export class MetronomeEngine {
     while (this.nextBeatTime < currentTime + lookahead) {
       const isDownbeat = this.currentBeat % this.settings.timeSignatureNumerator === 0;
       
-      // Schedule the audio
-      this.createClickSound(isDownbeat, this.nextBeatTime);
-      
-      // Emit beat event
-      this.emitEvent('beat', {
-        beat: (this.currentBeat % this.settings.timeSignatureNumerator) + 1,
-        measure: this.currentMeasure,
-        isDownbeat,
-        timestamp: this.nextBeatTime
-      });
+      // Handle count-in logic
+      if (this.isCountingIn) {
+        // Schedule count-in audio
+        this.createClickSound(isDownbeat, this.nextBeatTime, true);
+        
+        // Emit count-in beat event
+        this.emitEvent('beat', {
+          beat: (this.currentBeat % this.settings.timeSignatureNumerator) + 1,
+          measure: this.currentMeasure,
+          isDownbeat,
+          timestamp: this.nextBeatTime,
+          isCountIn: true
+        });
+
+        this.countInBeatsRemaining--;
+        
+        // Check if count-in is finished
+        if (this.countInBeatsRemaining <= 0) {
+          this.isCountingIn = false;
+          this.currentBeat = 0;
+          this.currentMeasure = 1;
+          this.emitEvent('countInEnd');
+        }
+      } else {
+        // Normal metronome beats
+        this.createClickSound(isDownbeat, this.nextBeatTime);
+        
+        // Emit beat event
+        this.emitEvent('beat', {
+          beat: (this.currentBeat % this.settings.timeSignatureNumerator) + 1,
+          measure: this.currentMeasure,
+          isDownbeat,
+          timestamp: this.nextBeatTime,
+          isCountIn: false
+        });
+      }
 
       // Calculate next beat time
       const beatInterval = 60.0 / this.settings.bpm;
@@ -109,8 +159,25 @@ export class MetronomeEngine {
       
       // Advance beat counter
       this.currentBeat++;
-      if (this.currentBeat % this.settings.timeSignatureNumerator === 0) {
+      if (!this.isCountingIn && this.currentBeat % this.settings.timeSignatureNumerator === 0) {
         this.currentMeasure++;
+        
+        // Check for loop conditions
+        if (this.settings.loopEnabled && this.currentMeasure > this.settings.loopEndMeasure) {
+          this.settings.currentLoop++;
+          this.emitEvent('loopEnd', this.settings);
+          
+          // Check if we've completed all target loops
+          if (this.settings.targetLoops > 0 && this.settings.currentLoop >= this.settings.targetLoops) {
+            this.emitEvent('loopComplete', this.settings);
+            this.stop();
+            return;
+          }
+          
+          // Reset to loop start
+          this.currentMeasure = this.settings.loopStartMeasure;
+          this.emitEvent('loopStart', this.settings);
+        }
       }
     }
 
@@ -157,8 +224,22 @@ export class MetronomeEngine {
     this.isPlaying = true;
     this.settings.isPlaying = true;
     this.nextBeatTime = this.audioContext.currentTime;
-    this.currentBeat = 0;
-    this.currentMeasure = 1;
+    
+    // Initialize count-in if enabled
+    if (this.settings.countInEnabled) {
+      this.isCountingIn = true;
+      this.countInBeatsRemaining = this.settings.countInBeats;
+      this.currentBeat = 0;
+      this.currentMeasure = 1;
+      this.emitEvent('countInStart', this.settings);
+    } else {
+      this.isCountingIn = false;
+      this.currentBeat = 0;
+      this.currentMeasure = this.settings.loopEnabled ? this.settings.loopStartMeasure : 1;
+    }
+    
+    // Reset loop counter
+    this.settings.currentLoop = 0;
 
     this.scheduleBeats();
     this.emitEvent('start', this.settings);
@@ -206,6 +287,70 @@ export class MetronomeEngine {
     
     this.settings.volume = volume;
     this.emitEvent('settingsChange', this.settings);
+  }
+
+  public setCountInEnabled(enabled: boolean): void {
+    this.settings.countInEnabled = enabled;
+    this.emitEvent('settingsChange', this.settings);
+  }
+
+  public setCountInBeats(beats: number): void {
+    if (beats < 1 || beats > 8) {
+      throw new Error('Count-in beats must be between 1 and 8');
+    }
+    
+    this.settings.countInBeats = beats;
+    this.emitEvent('settingsChange', this.settings);
+  }
+
+  public setCountInVolume(volume: number): void {
+    if (volume < 0 || volume > 1) {
+      throw new Error('Count-in volume must be between 0 and 1');
+    }
+    
+    this.settings.countInVolume = volume;
+    this.emitEvent('settingsChange', this.settings);
+  }
+
+  public setLoopEnabled(enabled: boolean): void {
+    this.settings.loopEnabled = enabled;
+    this.emitEvent('settingsChange', this.settings);
+  }
+
+  public setLoopRange(startMeasure: number, endMeasure: number): void {
+    if (startMeasure < 1) {
+      throw new Error('Loop start measure must be at least 1');
+    }
+    if (endMeasure <= startMeasure) {
+      throw new Error('Loop end measure must be greater than start measure');
+    }
+    
+    this.settings.loopStartMeasure = startMeasure;
+    this.settings.loopEndMeasure = endMeasure;
+    this.emitEvent('settingsChange', this.settings);
+  }
+
+  public setTargetLoops(loops: number): void {
+    if (loops < 0) {
+      throw new Error('Target loops must be 0 or greater');
+    }
+    
+    this.settings.targetLoops = loops;
+    this.emitEvent('settingsChange', this.settings);
+  }
+
+  public getCurrentMeasure(): number {
+    return this.currentMeasure;
+  }
+
+  public jumpToMeasure(measure: number): void {
+    if (measure < 1) {
+      throw new Error('Measure must be at least 1');
+    }
+    
+    this.currentMeasure = measure;
+    // Adjust beat counter to match
+    this.currentBeat = (measure - 1) * this.settings.timeSignatureNumerator;
   }
 
   public getSettings(): MetronomeSettings {

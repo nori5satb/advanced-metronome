@@ -148,6 +148,30 @@ const resources = [
     ),
   },
   {
+    href: "/songs",
+    text: "🎼 楽曲管理",
+    internal: true,
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
+      >
+        <path
+          d="M9 18V5l12-2v13"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="6" cy="18" r="3" strokeWidth="1.5"/>
+        <circle cx="18" cy="16" r="3" strokeWidth="1.5"/>
+      </svg>
+    ),
+  },
+  {
     href: "https://reactrouter.com/docs",
     text: "React Router Docs",
     internal: false,

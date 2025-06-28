@@ -14,6 +14,9 @@ export default function MetronomeControls({ className = '' }: MetronomeControlsP
     setBpm, 
     setTimeSignature, 
     setVolume,
+    setCountInEnabled,
+    setCountInBeats,
+    setCountInVolume,
     ensureAudioContext 
   } = useMetronome();
 
@@ -53,6 +56,20 @@ export default function MetronomeControls({ className = '' }: MetronomeControlsP
   const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(event.target.value);
     setVolume(value);
+  };
+
+  const handleCountInToggle = () => {
+    setCountInEnabled(!settings.countInEnabled);
+  };
+
+  const handleCountInBeatsChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const beats = parseInt(event.target.value);
+    setCountInBeats(beats);
+  };
+
+  const handleCountInVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(event.target.value);
+    setCountInVolume(value);
   };
 
   const timeSignatures = [
@@ -145,7 +162,7 @@ export default function MetronomeControls({ className = '' }: MetronomeControlsP
       </div>
 
       {/* Volume Control */}
-      <div className="mb-4">
+      <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Volume ({Math.round(settings.volume * 100)}%)
         </label>
@@ -161,6 +178,66 @@ export default function MetronomeControls({ className = '' }: MetronomeControlsP
             background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${settings.volume * 100}%, #e5e7eb ${settings.volume * 100}%, #e5e7eb 100%)`
           }}
         />
+      </div>
+
+      {/* Count-in Settings */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-sm font-medium text-gray-700">
+            カウントイン機能
+          </label>
+          <button
+            onClick={handleCountInToggle}
+            className={`
+              relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out
+              ${settings.countInEnabled ? 'bg-blue-600' : 'bg-gray-200'}
+            `}
+          >
+            <span
+              className={`
+                inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out
+                ${settings.countInEnabled ? 'translate-x-6' : 'translate-x-1'}
+              `}
+            />
+          </button>
+        </div>
+        
+        {settings.countInEnabled && (
+          <div className="space-y-3 pl-4 border-l-2 border-blue-200">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                カウントイン拍数
+              </label>
+              <select
+                value={settings.countInBeats}
+                onChange={handleCountInBeatsChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(beats => (
+                  <option key={beats} value={beats}>{beats}拍</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                カウントイン音量 ({Math.round(settings.countInVolume * 100)}%)
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={settings.countInVolume}
+                onChange={handleCountInVolumeChange}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${settings.countInVolume * 100}%, #e5e7eb ${settings.countInVolume * 100}%, #e5e7eb 100%)`
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Quick BPM Presets */}

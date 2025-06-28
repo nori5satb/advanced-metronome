@@ -89,4 +89,41 @@ export class SongRepository {
       await this.updateSection(sectionIds[i], { order: i + 1 });
     }
   }
+
+  async bulkUpdateSectionTempo(updates: Array<{ sectionId: string; tempo: number }>): Promise<void> {
+    const now = Date.now();
+    
+    for (const update of updates) {
+      await this.db
+        .update(sections)
+        .set({ tempo: update.tempo, updatedAt: now })
+        .where(eq(sections.id, update.sectionId));
+    }
+  }
+
+  async saveTempoBulkAdjustment(songId: string, adjustmentData: {
+    scaling: number;
+    excludedSectionIds: string[];
+    originalTempos: Record<string, number>;
+    newTempos: Record<string, number>;
+  }): Promise<void> {
+    // テンポ調整履歴をメタデータとして保存（将来的な拡張用）
+    const metadata = {
+      lastTempoAdjustment: {
+        timestamp: Date.now(),
+        scaling: adjustmentData.scaling,
+        excludedSectionIds: adjustmentData.excludedSectionIds,
+        changes: Object.entries(adjustmentData.newTempos).map(([sectionId, newTempo]) => ({
+          sectionId,
+          originalTempo: adjustmentData.originalTempos[sectionId],
+          newTempo
+        }))
+      }
+    };
+
+    await this.updateSong(songId, {
+      // メタデータをJSONとして保存する場合の拡張可能フィールド
+      updatedAt: Date.now()
+    });
+  }
 }
