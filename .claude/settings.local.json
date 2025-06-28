@@ -12,7 +12,8 @@
       "Bash(then)",
       "Bash(else)",
       "Bash(tmux show-options:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": []
   }
