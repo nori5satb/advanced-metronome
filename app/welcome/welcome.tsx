@@ -218,6 +218,65 @@ const resources = [
     ),
   },
   {
+    href: "/scores",
+    text: "📄 楽譜管理",
+    internal: true,
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
+      >
+        <path
+          d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <polyline points="14,2 14,8 20,8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <line x1="16" y1="13" x2="8" y2="13" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <line x1="16" y1="17" x2="8" y2="17" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    href: "/score-analysis",
+    text: "📊 楽譜解析",
+    internal: true,
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
+      >
+        <path
+          d="M9 2v20l5-3 5 3V2H9Z"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M12 6h3"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M12 10h3"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
     href: "https://reactrouter.com/docs",
     text: "React Router Docs",
     internal: false,
